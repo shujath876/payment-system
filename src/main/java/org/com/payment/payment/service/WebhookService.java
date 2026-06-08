@@ -90,10 +90,24 @@ public class WebhookService {
                     .getAsJsonObject()
                     .getAsJsonObject("object");
 
-        String stripeTransactionId = paymentIntent.getId();
-        String failureReason = paymentIntent.getLastPaymentError() != null
-                ? paymentIntent.getLastPaymentError().getMessage()
-                : "Unknown failure reason";
+            if (dataObject == null) {
+                log.error("Could not extract object from event data");
+                return;
+            }
+
+            String stripeTransactionId = dataObject
+                    .get("id")
+                    .getAsString();
+
+            String failureReason = "Unknown failure reason";
+            if (dataObject.has("last_payment_error")
+                    && !dataObject.get("last_payment_error").isJsonNull()) {
+                JsonObject lastError = dataObject
+                        .getAsJsonObject("last_payment_error");
+                if (lastError.has("message")) {
+                    failureReason = lastError.get("message").getAsString();
+                }
+            }
 
         log.error("Payment failed for Stripe ID: {}. Reason: {}",
                 stripeTransactionId, failureReason);
