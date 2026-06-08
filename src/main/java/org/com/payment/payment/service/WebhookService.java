@@ -82,11 +82,13 @@ public class WebhookService {
     }
 
     private void handlePaymentFailed(Event event) {
-        PaymentIntent paymentIntent = (PaymentIntent) event
-                .getDataObjectDeserializer()
-                .getObject()
-                .orElseThrow(() -> new org.com.payment.exception.PaymentException(
-                        "Could not deserialize PaymentIntent", 500));
+        try {
+            String rawJson = event.getData().toJson();
+
+            JsonObject dataObject = JsonParser
+                    .parseString(rawJson)
+                    .getAsJsonObject()
+                    .getAsJsonObject("object");
 
         String stripeTransactionId = paymentIntent.getId();
         String failureReason = paymentIntent.getLastPaymentError() != null
